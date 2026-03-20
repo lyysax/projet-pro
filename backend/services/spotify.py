@@ -27,7 +27,7 @@ def spotify_auth():
         "client_id": CLIENT_ID,
         "response_type": "code",
         "redirect_uri": REDIRECT_URI,
-        "scope": "user-read-email user-read-private"
+        "scope": "user-read-email user-read-private user-top-read user-read-recently-played"
     }
     url = f"{SPOTIFY_AUTH_URL}?{urlencode(params)}"
     return {"auth_url": url}
@@ -49,14 +49,26 @@ def spotify_callback(code: str):
     }
 
     response = requests.post(SPOTIFY_TOKEN_URL, data=data, headers=headers)
-    return response.json()
+    token_data = response.json()
+
+    # Sauvegarde dans Supabase
+    expires_at = int(time.time()) + token_data["expires_in"]
+
+    supabase.table("spotify_token").upsert({
+        "id": "user_1",
+        "access_token": token_data["access_token"],
+        "refresh_token": token_data["refresh_token"],
+        "expires_at": expires_at
+    }).execute()
+
+    return token_data
 
 # Auto refresh token endpoint (to be called by frontend before making Spotify API calls)
 
 @router.get("/refresh")
 def refresh_spotify_token():
     # 1. récupérer le refresh token
-    data = supabase.table("spotify_tokens").select("*").eq("id", "user_1").single().execute()
+    data = supabase.table("spotify_token").select("*").eq("id", "user_1").single().execute()
     refresh_token = data.data["refresh_token"]
 
     # 2. appel Spotify
@@ -74,9 +86,52 @@ def refresh_spotify_token():
     # 3. mettre à jour Supabase
     expires_at = int(time.time()) + new_token["expires_in"]
 
-    supabase.table("spotify_tokens").update({
+    supabase.table("spotify_token").update({
         "access_token": new_token["access_token"],
         "expires_at": expires_at
     }).eq("id", "user_1").execute()
 
     return new_token
+
+# Endpoints pour récupérer les données Spotify
+
+@router.get("/top-artists")
+def get_top_artists():
+    data = supabase.table("spotify_token").select("access_token").eq("id", "user_1").single().execute()
+    access_token = data.data["access_token"]
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = requests.get(f"{SPOTIFY_API_URL}/me/top/artists", headers=headers, params={"time_range": "short_term", "limit": 10})
+    
+    if response.status_code != 200:
+        return {"error": response.status_code, "detail": response.text}
+    
+    return response.json()
+
+
+@router.get("/top-tracks")
+def get_top_tracks():
+    data = supabase.table("spotify_token").select("access_token").eq("id", "user_1").single().execute()
+    access_token = data.data["access_token"]
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = requests.get(f"{SPOTIFY_API_URL}/me/top/tracks", headers=headers, params={"time_range": "short_term", "limit": 10})
+    
+    if response.status_code != 200:
+        return {"error": response.status_code, "detail": response.text}
+
+    return response.json()
+
+
+@router.get("/recently-played")
+def get_recently_played():
+    data = supabase.table("spotify_token").select("access_token").eq("id", "user_1").single().execute()
+    access_token = data.data["access_token"]
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = requests.get(f"{SPOTIFY_API_URL}/me/player/recently-played", headers=headers, params={"limit": 50})
+    
+    if response.status_code != 200:
+        return {"error": response.status_code, "detail": response.text}
+
+    return response.json()
