@@ -8,113 +8,335 @@
   </head>
   <body>
     <div class="page page--dashboard">
+
       <header class="header">
         <span class="logo">MuseStat</span>
         <div class="header-right">
-          <span class="user-name">@utilisateur</span>
+          <img src="images/spotify.png" alt="Spotify" class="header-platform-logo" />
+          <span class="user-name" id="user-name">@utilisateur</span>
           <a href="index.html" class="btn-logout">Déconnexion</a>
         </div>
       </header>
 
       <main class="main main--dashboard">
+
         <!-- Bonjour + sélecteur période -->
         <div class="top-row">
           <div>
-            <h1 class="greeting">Bonjour, [Prénom]</h1>
-            <p class="subtitle">Tes écoutes — [période]</p>
+            <h1 class="greeting" id="greeting">Bonjour,</h1>
+            <p class="subtitle" id="greeting-sub">Tes écoutes du jour</p>
           </div>
           <div class="period-tabs">
-            <button class="period-tab period-tab--active">Jour</button>
-            <button class="period-tab">Semaine</button>
-            <button class="period-tab">Mois</button>
-            <button class="period-tab">Année</button>
+            <button class="period-tab period-tab--active" data-view="today">Aujourd'hui</button>
+            <button class="period-tab" data-view="short_term">4 semaines</button>
+            <button class="period-tab" data-view="medium_term">6 mois</button>
+            <button class="period-tab" data-view="long_term">Tout le temps</button>
           </div>
         </div>
 
-        <!-- KPI -->
-        <div class="kpi-row">
-          <div class="kpi-card">
-            <p class="kpi-label">Minutes écoutées</p>
-            <p class="kpi-value">—</p>
-          </div>
-          <div class="kpi-card">
-            <p class="kpi-label">Titres joués</p>
-            <p class="kpi-value">—</p>
-          </div>
-          <div class="kpi-card">
-            <p class="kpi-label">Artistes écoutés</p>
-            <p class="kpi-value">—</p>
-          </div>
+        <!-- MESSAGE D'ATTENTE (visible avant 21h sur la vue Aujourd'hui) -->
+        <div id="waiting-message" class="waiting-box hidden">
+          <p class="waiting-icon">🕘</p>
+          <p class="waiting-title">Les stats du jour arrivent à 21h</p>
+          <p class="waiting-sub">Reviens ce soir pour découvrir tout ce que tu as écouté aujourd'hui.</p>
+          <p class="waiting-time" id="waiting-time"></p>
         </div>
 
-        <!-- Top artistes -->
-        <section id="artistes" class="card card--full">
-          <h2 class="card-title">Top artistes</h2>
-          <ul class="list">
-            <li class="list-item">
-              <span class="list-rank">1</span> [Artiste]
-            </li>
-            <li class="list-item">
-              <span class="list-rank">2</span> [Artiste]
-            </li>
-            <li class="list-item">
-              <span class="list-rank">3</span> [Artiste]
-            </li>
-            <li class="list-item">
-              <span class="list-rank">4</span> [Artiste]
-            </li>
-            <li class="list-item">
-              <span class="list-rank">5</span> [Artiste]
-            </li>
-          </ul>
-        </section>
+        <!-- CONTENU PRINCIPAL -->
+        <div id="dashboard-content">
 
-        <!-- Top titres -->
-        <section id="titres" class="card card--full">
-          <h2 class="card-title">Top titres</h2>
-          <ul class="list">
-            <li class="list-item">
-              <span class="list-rank">1</span> [Titre] — [Artiste]
-            </li>
-            <li class="list-item">
-              <span class="list-rank">2</span> [Titre] — [Artiste]
-            </li>
-            <li class="list-item">
-              <span class="list-rank">3</span> [Titre] — [Artiste]
-            </li>
-            <li class="list-item">
-              <span class="list-rank">4</span> [Titre] — [Artiste]
-            </li>
-            <li class="list-item">
-              <span class="list-rank">5</span> [Titre] — [Artiste]
-            </li>
-          </ul>
-        </section>
+          <!-- KPI -->
+          <div class="kpi-row" id="kpi-row">
+            <div class="kpi-card">
+              <p class="kpi-label">Minutes écoutées</p>
+              <p class="kpi-value" id="kpi-minutes">—</p>
+              <p class="kpi-sub" id="kpi-hours"></p>
+            </div>
+            <div class="kpi-card">
+              <p class="kpi-label">Titres joués</p>
+              <p class="kpi-value" id="kpi-tracks">—</p>
+              <p class="kpi-sub" id="kpi-tracks-sub"></p>
+            </div>
+            <div class="kpi-card">
+              <p class="kpi-label">Artistes différents</p>
+              <p class="kpi-value" id="kpi-artists">—</p>
+              <p class="kpi-sub" id="kpi-artists-sub"></p>
+            </div>
+            <div class="kpi-card" id="kpi-last-card">
+              <p class="kpi-label">Dernier titre joué</p>
+              <p class="kpi-value kpi-value--small" id="kpi-last-track">—</p>
+              <p class="kpi-sub" id="kpi-last-artist"></p>
+            </div>
+          </div>
 
-        <!-- Genres -->
-        <section id="genres" class="card card--full">
-          <h2 class="card-title">Genres favoris</h2>
-          <ul class="list">
-            <li class="list-item"><span class="list-rank">1</span> [Genre]</li>
-            <li class="list-item"><span class="list-rank">2</span> [Genre]</li>
-            <li class="list-item"><span class="list-rank">3</span> [Genre]</li>
-            <li class="list-item"><span class="list-rank">4</span> [Genre]</li>
-          </ul>
-        </section>
+          <!-- Top artistes -->
+          <section class="card card--full">
+            <h2 class="card-title">Top artistes</h2>
+            <ul class="list" id="artist-list">
+              <li class="list-item list-placeholder">Chargement...</li>
+            </ul>
+          </section>
 
-        <!-- Plateformes -->
-        <section id="plateformes" class="card card--full">
-          <h2 class="card-title">Plateformes</h2>
-          <ul class="list">
-            <li class="list-item">Spotify — [%]</li>
-            <li class="list-item">Deezer — [%]</li>
-          </ul>
-        </section>
+          <!-- Top titres (caché sur la vue Aujourd'hui) -->
+          <section class="card card--full" id="section-tracks">
+            <h2 class="card-title">Top titres</h2>
+            <ul class="list" id="track-list">
+              <li class="list-item list-placeholder">Chargement...</li>
+            </ul>
+          </section>
+
+          <!-- Genres favoris (caché sur la vue Aujourd'hui) -->
+          <section class="card card--full" id="section-genres">
+            <h2 class="card-title">Genres favoris</h2>
+            <ul class="list" id="genre-list">
+              <li class="list-item list-placeholder">Chargement...</li>
+            </ul>
+          </section>
+
+          <!-- Titres récents (uniquement sur la vue Aujourd'hui) -->
+          <section class="card card--full" id="section-recent">
+            <h2 class="card-title">Titres écoutés aujourd'hui</h2>
+            <ul class="list" id="recent-list">
+              <li class="list-item list-placeholder">Chargement...</li>
+            </ul>
+          </section>
+
+        </div>
+
       </main>
 
       <footer class="footer">
         <span>© 2025 MuseStat</span>
       </footer>
     </div>
+
+    <script>
+      const BASE_URL = 'http://127.0.0.1:8000';
+      const HEURE_DEVERROUILLAGE = 21;
+
+      // ── Utilitaires ──────────────────────────────────────
+      function isAfter21h() {
+        return new Date().getHours() >= HEURE_DEVERROUILLAGE;
+      }
+
+      function tempsRestant() {
+        const now = new Date();
+        const cible = new Date();
+        cible.setHours(HEURE_DEVERROUILLAGE, 0, 0, 0);
+        const diff = cible - now;
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        return `Il reste ${h}h${m < 10 ? '0' : ''}${m}min`;
+      }
+
+      function showSection(id, visible) {
+        document.getElementById(id).classList.toggle('hidden', !visible);
+      }
+
+      // ── Profil ───────────────────────────────────────────
+      async function loadProfile() {
+        try {
+          const profile = await fetch(`${BASE_URL}/spotify/me`).then(r => r.json());
+          const name = profile.name || 'toi';
+          document.getElementById('greeting').textContent = `Bonjour, ${name}`;
+          document.getElementById('user-name').textContent = `@${name.toLowerCase().replace(/\s+/g, '_')}`;
+        } catch (e) {
+          console.error('Profil non chargé :', e);
+        }
+      }
+
+      // ── Vue Aujourd'hui ──────────────────────────────────
+      async function loadToday() {
+        // Sections visibles / cachées
+        showSection('section-tracks', false);
+        showSection('section-genres', false);
+        showSection('section-recent', true);
+        showSection('kpi-last-card', true);
+        document.getElementById('greeting-sub').textContent = "Tes écoutes d'aujourd'hui";
+
+        if (!isAfter21h()) {
+          // Avant 21h : message d'attente
+          document.getElementById('waiting-message').classList.remove('hidden');
+          document.getElementById('dashboard-content').classList.add('hidden');
+          document.getElementById('waiting-time').textContent = tempsRestant();
+          return;
+        }
+
+        // Après 21h : afficher les stats
+        document.getElementById('waiting-message').classList.add('hidden');
+        document.getElementById('dashboard-content').classList.remove('hidden');
+
+        try {
+          const recent = await fetch(`${BASE_URL}/spotify/recently-played`).then(r => r.json());
+          const allItems = recent.items || [];
+
+          // Filtrer uniquement les titres d'aujourd'hui
+          const today = new Date().toDateString();
+          const items = allItems.filter(i => new Date(i.played_at).toDateString() === today);
+
+          // KPI
+          const totalMs = items.reduce((sum, i) => sum + i.track.duration_ms, 0);
+          const totalMinutes = Math.round(totalMs / 60000);
+          document.getElementById('kpi-minutes').textContent = totalMinutes;
+          document.getElementById('kpi-hours').textContent = `soit ${Math.floor(totalMinutes / 60)}h${String(totalMinutes % 60).padStart(2, '0')}min`;
+          document.getElementById('kpi-tracks').textContent = items.length;
+          document.getElementById('kpi-tracks-sub').textContent = 'aujourd\'hui';
+          const artistsUniques = new Set(items.map(i => i.track.artists[0].name));
+          document.getElementById('kpi-artists').textContent = artistsUniques.size;
+          document.getElementById('kpi-artists-sub').textContent = 'aujourd\'hui';
+
+          // Dernier titre
+          if (items.length > 0) {
+            const last = items[0].track;
+            document.getElementById('kpi-last-track').textContent = last.name;
+            document.getElementById('kpi-last-artist').textContent = last.artists[0].name;
+          }
+
+          // Top artistes du jour (comptage)
+          const artistCount = {};
+          items.forEach(i => {
+            const name = i.track.artists[0].name;
+            artistCount[name] = (artistCount[name] || 0) + 1;
+          });
+          const sortedArtists = Object.entries(artistCount).sort((a, b) => b[1] - a[1]);
+          document.getElementById('artist-list').innerHTML = sortedArtists.length
+            ? sortedArtists.slice(0, 5).map(([name, count], i) => `
+                <li class="list-item">
+                  <span class="list-rank">${i + 1}</span>
+                  <span class="list-name">${name}</span>
+                  <span class="list-badge">${count} titre${count > 1 ? 's' : ''}</span>
+                </li>
+              `).join('')
+            : '<li class="list-item list-placeholder">Aucun titre écouté aujourd\'hui</li>';
+
+          // Liste des titres du jour
+          document.getElementById('recent-list').innerHTML = items.length
+            ? items.map((item, i) => {
+                const t = item.track;
+                const heure = new Date(item.played_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                return `
+                  <li class="list-item">
+                    <span class="list-rank">${i + 1}</span>
+                    <span class="list-name">${t.name}</span>
+                    <span class="list-detail">${t.artists[0].name}</span>
+                    <span class="list-badge">${heure}</span>
+                  </li>
+                `;
+              }).join('')
+            : '<li class="list-item list-placeholder">Aucun titre écouté aujourd\'hui</li>';
+
+        } catch (e) {
+          console.error('Erreur chargement aujourd\'hui :', e);
+        }
+      }
+
+      // ── Vue périodes (4 semaines / 6 mois / tout le temps) ──
+      async function loadPeriod(time_range) {
+        showSection('section-tracks', true);
+        showSection('section-genres', true);
+        showSection('section-recent', false);
+        showSection('kpi-last-card', false);
+        document.getElementById('waiting-message').classList.add('hidden');
+        document.getElementById('dashboard-content').classList.remove('hidden');
+
+        const labels = {
+          short_term:  '4 dernières semaines',
+          medium_term: '6 derniers mois',
+          long_term:   'Depuis toujours',
+        };
+        document.getElementById('greeting-sub').textContent = `Tes écoutes — ${labels[time_range]}`;
+
+        // Reset
+        ['artist-list', 'track-list', 'genre-list'].forEach(id => {
+          document.getElementById(id).innerHTML = '<li class="list-item list-placeholder">Chargement...</li>';
+        });
+        ['kpi-minutes', 'kpi-tracks', 'kpi-artists'].forEach(id => {
+          document.getElementById(id).textContent = '—';
+        });
+
+        try {
+          const [artists, tracks] = await Promise.all([
+            fetch(`${BASE_URL}/spotify/top-artists`).then(r => r.json()),
+            fetch(`${BASE_URL}/spotify/top-tracks`).then(r => r.json()),
+          ]);
+
+          const artistItems = artists.items || [];
+          const trackItems  = tracks.items  || [];
+
+          // KPI
+          const totalMs = trackItems.reduce((sum, t) => sum + t.duration_ms, 0);
+          const totalMinutes = Math.round(totalMs / 60000);
+          document.getElementById('kpi-minutes').textContent = totalMinutes;
+          document.getElementById('kpi-hours').textContent = `soit ${Math.floor(totalMinutes / 60)}h${String(totalMinutes % 60).padStart(2, '0')}min`;
+          document.getElementById('kpi-tracks').textContent = trackItems.length;
+          document.getElementById('kpi-tracks-sub').textContent = labels[time_range];
+          document.getElementById('kpi-artists').textContent = artistItems.length;
+          document.getElementById('kpi-artists-sub').textContent = labels[time_range];
+
+          // Top artistes
+          document.getElementById('artist-list').innerHTML = artistItems.length
+            ? artistItems.map((a, i) => `
+                <li class="list-item">
+                  <span class="list-rank">${i + 1}</span>
+                  <span class="list-name">${a.name}</span>
+                  <span class="list-detail">${a.genres.slice(0, 2).join(', ') || '—'}</span>
+                  <span class="list-badge">Popularité ${a.popularity}/100</span>
+                </li>
+              `).join('')
+            : '<li class="list-item list-placeholder">Aucune donnée</li>';
+
+          // Top titres
+          document.getElementById('track-list').innerHTML = trackItems.length
+            ? trackItems.map((t, i) => `
+                <li class="list-item">
+                  <span class="list-rank">${i + 1}</span>
+                  <span class="list-name">${t.name}</span>
+                  <span class="list-detail">${t.artists[0].name} · ${t.album.name}</span>
+                  <span class="list-badge">${Math.round(t.duration_ms / 60000)}min</span>
+                </li>
+              `).join('')
+            : '<li class="list-item list-placeholder">Aucune donnée</li>';
+
+          // Genres
+          const genres = {};
+          artistItems.forEach(a => {
+            a.genres.forEach(g => { genres[g] = (genres[g] || 0) + 1; });
+          });
+          const sortedGenres = Object.entries(genres).sort((a, b) => b[1] - a[1]);
+          document.getElementById('genre-list').innerHTML = sortedGenres.length
+            ? sortedGenres.slice(0, 8).map((g, i) => `
+                <li class="list-item">
+                  <span class="list-rank">${i + 1}</span>
+                  <span class="list-name">${g[0]}</span>
+                  <span class="list-badge">${g[1]} artiste${g[1] > 1 ? 's' : ''}</span>
+                </li>
+              `).join('')
+            : '<li class="list-item list-placeholder">Aucune donnée</li>';
+
+        } catch (e) {
+          console.error('Erreur chargement période :', e);
+        }
+      }
+
+      // ── Sélecteur de période ─────────────────────────────
+      document.querySelectorAll('.period-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('period-tab--active'));
+          btn.classList.add('period-tab--active');
+
+          const view = btn.dataset.view;
+          if (view === 'today') {
+            loadToday();
+          } else {
+            loadPeriod(view);
+          }
+        });
+      });
+
+      // ── Init ─────────────────────────────────────────────
+      loadProfile();
+      loadToday();
+    </script>
+
   </body>
 </html>
