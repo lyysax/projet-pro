@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MuseStat</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="header">
+        <span class="logo">MuseStat</span>
+      </header>
+
+      <main class="main">
+        <!-- ÉTAPE 1 : choix de la plateforme -->
+        <div id="step-platform">
+          <h1 class="title">Tes statistiques musicales, en temps réel.</h1>
+          <p class="subtitle">
+            Connecte-toi à ta plateforme de streaming pour commencer.
+          </p>
+
+          <div class="connect-box">
+            <p class="connect-box-title">Choisir une plateforme</p>
+
+            <button class="btn-platform" onclick="showLogin('Spotify')">
+              <img src="img/spotify.png" alt="Spotify" class="platform-logo" />
+              <span class="platform-label">Continuer avec Spotify</span>
+            </button>
+
+            <div class="connect-divider"></div>
+
+            <button class="btn-platform" onclick="showLogin('Deezer')">
+              <img src="img/deezer.png" alt="Deezer" class="platform-logo" />
+              <span class="platform-label">Continuer avec Deezer</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ÉTAPE 2 : formulaire email / mot de passe -->
+        <div id="step-login" class="hidden">
+          <div class="connect-box">
+            <p class="connect-box-title">
+              Connexion — <span id="platform-name"></span>
+            </p>
+
+            <div class="form-group">
+              <label class="form-label" for="email">Adresse email</label>
+              <input
+                class="form-input"
+                type="email"
+                id="email"
+                placeholder="exemple@email.com"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="password">Mot de passe</label>
+              <input
+                class="form-input"
+                type="password"
+                id="password"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <a href="dashboard.html" class="btn btn-primary">Se connecter</a>
+
+            <p class="back-link" onclick="showPlatforms()">
+              ← Changer de plateforme
+            </p>
+          </div>
+        </div>
+      </main>
+
+      <footer class="footer">
+        <span>© 2025 MuseStat</span>
+      </footer>
+    </div>
+
+    <script>
+      function showLogin(platform) {
+        document.getElementById("step-platform").classList.add("hidden");
+        document.getElementById("step-login").classList.remove("hidden");
+        document.getElementById("platform-name").textContent = platform;
+      }
+
+      function showPlatforms() {
+        document.getElementById("step-login").classList.add("hidden");
+        document.getElementById("step-platform").classList.remove("hidden");
+      }
+    </script>
+  </body>
+</html>
