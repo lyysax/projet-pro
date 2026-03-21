@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MuseStat — Dashboard</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="page page--dashboard">
+      <header class="header">
+        <span class="logo">MuseStat</span>
+        <div class="header-right">
+          <span class="user-name">@utilisateur</span>
+          <a href="index.html" class="btn-logout">Déconnexion</a>
+        </div>
+      </header>
+
+      <main class="main main--dashboard">
+        <!-- Bonjour + sélecteur période -->
+        <div class="top-row">
+          <div>
+            <h1 class="greeting">Bonjour, [Prénom]</h1>
+            <p class="subtitle">Tes écoutes — [période]</p>
+          </div>
+          <div class="period-tabs">
+            <button class="period-tab period-tab--active">Jour</button>
+            <button class="period-tab">Semaine</button>
+            <button class="period-tab">Mois</button>
+            <button class="period-tab">Année</button>
+          </div>
+        </div>
+
+        <!-- KPI -->
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <p class="kpi-label">Minutes écoutées</p>
+            <p class="kpi-value">—</p>
+          </div>
+          <div class="kpi-card">
+            <p class="kpi-label">Titres joués</p>
+            <p class="kpi-value">—</p>
+          </div>
+          <div class="kpi-card">
+            <p class="kpi-label">Artistes écoutés</p>
+            <p class="kpi-value">—</p>
+          </div>
+        </div>
+
+        <!-- Top artistes -->
+        <section id="artistes" class="card card--full">
+          <h2 class="card-title">Top artistes</h2>
+          <ul class="list">
+            <li class="list-item">
+              <span class="list-rank">1</span> [Artiste]
+            </li>
+            <li class="list-item">
+              <span class="list-rank">2</span> [Artiste]
+            </li>
+            <li class="list-item">
+              <span class="list-rank">3</span> [Artiste]
+            </li>
+            <li class="list-item">
+              <span class="list-rank">4</span> [Artiste]
+            </li>
+            <li class="list-item">
+              <span class="list-rank">5</span> [Artiste]
+            </li>
+          </ul>
+        </section>
+
+        <!-- Top titres -->
+        <section id="titres" class="card card--full">
+          <h2 class="card-title">Top titres</h2>
+          <ul class="list">
+            <li class="list-item">
+              <span class="list-rank">1</span> [Titre] — [Artiste]
+            </li>
+            <li class="list-item">
+              <span class="list-rank">2</span> [Titre] — [Artiste]
+            </li>
+            <li class="list-item">
+              <span class="list-rank">3</span> [Titre] — [Artiste]
+            </li>
+            <li class="list-item">
+              <span class="list-rank">4</span> [Titre] — [Artiste]
+            </li>
+            <li class="list-item">
+              <span class="list-rank">5</span> [Titre] — [Artiste]
+            </li>
+          </ul>
+        </section>
+
+        <!-- Genres -->
+        <section id="genres" class="card card--full">
+          <h2 class="card-title">Genres favoris</h2>
+          <ul class="list">
+            <li class="list-item"><span class="list-rank">1</span> [Genre]</li>
+            <li class="list-item"><span class="list-rank">2</span> [Genre]</li>
+            <li class="list-item"><span class="list-rank">3</span> [Genre]</li>
+            <li class="list-item"><span class="list-rank">4</span> [Genre]</li>
+          </ul>
+        </section>
+
+        <!-- Plateformes -->
+        <section id="plateformes" class="card card--full">
+          <h2 class="card-title">Plateformes</h2>
+          <ul class="list">
+            <li class="list-item">Spotify — [%]</li>
+            <li class="list-item">Deezer — [%]</li>
+          </ul>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <span>© 2025 MuseStat</span>
+      </footer>
+    </div>
+  </body>
+</html>
