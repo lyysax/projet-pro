@@ -5,6 +5,9 @@ import time
 from urllib.parse import urlencode
 from fastapi import APIRouter, Request, Query
 from supabase import create_client, Client
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
+
 
 router = APIRouter()
 
@@ -20,6 +23,7 @@ SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize"
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
 SPOTIFY_API_URL = "https://api.spotify.com/v1"
 
+PARIS_TZ = ZoneInfo("Europe/Paris")
 
 @router.get("/auth")
 def spotify_auth():
@@ -123,7 +127,10 @@ def get_me():
 # Endpoints pour récupérer les données Spotify
 
 @router.get("/top-artists")
-def get_top_artists(time_range: str = Query("short_term")):
+def get_top_artists(
+    time_range: str = Query("short_term"),
+    limit: int = Query(50, ge=1, le=50)
+):
     data = supabase.table("spotify_token").select("access_token").eq("id", "user_1").single().execute()
     access_token = data.data["access_token"]
 
@@ -131,7 +138,7 @@ def get_top_artists(time_range: str = Query("short_term")):
     response = requests.get(
         f"{SPOTIFY_API_URL}/me/top/artists",
         headers=headers,
-        params={"time_range": time_range, "limit": 10}
+        params={"time_range": time_range, "limit": limit}
     )
 
     if response.status_code != 200:
@@ -141,7 +148,10 @@ def get_top_artists(time_range: str = Query("short_term")):
 
 
 @router.get("/top-tracks")
-def get_top_tracks(time_range: str = Query("short_term")):
+def get_top_tracks(
+    time_range: str = Query("short_term"),
+    limit: int = Query(50, ge=1, le=50)
+):
     data = supabase.table("spotify_token").select("access_token").eq("id", "user_1").single().execute()
     access_token = data.data["access_token"]
 
@@ -149,13 +159,13 @@ def get_top_tracks(time_range: str = Query("short_term")):
     response = requests.get(
         f"{SPOTIFY_API_URL}/me/top/tracks",
         headers=headers,
-        params={"time_range": time_range, "limit": 10}
+        params={"time_range": time_range, "limit": limit}
     )
 
     if response.status_code != 200:
         return {"error": response.status_code, "detail": response.text}
 
-    return response.json() 
+    return response.json()
 
 ## Endpoint pour récupérer l'historique d'écoute récent
 
@@ -179,25 +189,37 @@ def save_listening_history():
     access_token = data.data["access_token"]
 
     headers = {"Authorization": f"Bearer {access_token}"}
-    response = requests.get(f"{SPOTIFY_API_URL}/me/player/recently-played", headers=headers, params={"limit": 50})
-    
+    response = requests.get(
+        f"{SPOTIFY_API_URL}/me/player/recently-played",
+        headers=headers,
+        params={"limit": 50}
+    )
+
     if response.status_code != 200:
         return {"error": response.status_code, "detail": response.text}
-    
-    tracks = response.json()["items"]
-    
-    for track in tracks:
-        supabase.table("listening_history").upsert({
-            "track_id": track["track"]["id"],
-            "track_name": track["track"]["name"],
-            "artist_name": track["track"]["artists"][0]["name"],
-            "duration_ms": track["track"]["duration_ms"],
-            "played_at": track["played_at"]
-        }).execute()
-    
-    return {"saved": len(tracks)}
 
-from datetime import date, datetime, timezone
+    tracks = response.json().get("items", [])
+    rows = []
+
+    for item in tracks:
+        track = item.get("track", {})
+        rows.append({
+            "track_id": track.get("id"),
+            "track_name": track.get("name"),
+            "artist_name": (track.get("artists") or [{}])[0].get("name"),
+            "duration_ms": track.get("duration_ms") or 0,
+            "played_at": item.get("played_at")
+        })
+
+    rows = [r for r in rows if r["track_id"] and r["played_at"]]
+
+    if rows:
+        supabase.table("listening_history").upsert(
+            rows,
+            on_conflict="track_id,played_at"
+        ).execute()
+
+    return {"saved": len(rows)}
 
 @router.get("/daily-recap")
 def daily_recap():
@@ -227,4 +249,99 @@ def daily_recap():
         "top_artist": top_artist,
         "tracks": tracks
 
+        
+
+    }
+
+def _release_window_utc(now_paris: datetime):
+    today_21 = now_paris.replace(hour=21, minute=0, second=0, microsecond=0)
+    if now_paris >= today_21:
+        release_paris = today_21
+    else:
+        release_paris = today_21 - timedelta(days=1)
+
+    start_paris = release_paris - timedelta(hours=24)
+
+    return (
+        start_paris.astimezone(timezone.utc),
+        release_paris.astimezone(timezone.utc),
+        today_21 if now_paris < today_21 else today_21 + timedelta(days=1),
+        release_paris
+    )
+
+@router.get("/daily-stats")
+def daily_stats():
+    now_paris = datetime.now(PARIS_TZ)
+    start_utc, end_utc, next_release_paris, release_paris = _release_window_utc(now_paris)
+
+    # On lit la fenêtre 24h qui se termine à 21h (snapshot quotidien)
+    data = (
+        supabase.table("listening_history")
+        .select("*")
+        .gte("played_at", start_utc.isoformat().replace("+00:00", "Z"))
+        .lt("played_at", end_utc.isoformat().replace("+00:00", "Z"))
+        .execute()
+    )
+
+    tracks = data.data or []
+
+    # Top artistes (top 5)
+    artist_count = {}
+    for t in tracks:
+        artist = t.get("artist_name") or "Inconnu"
+        artist_count[artist] = artist_count.get(artist, 0) + 1
+    top_artists = sorted(artist_count.items(), key=lambda x: x[1], reverse=True)[:5]
+
+    # Top tracks (top 5)
+    track_count = {}
+    for t in tracks:
+        key = (
+            t.get("track_name") or "Inconnu",
+            t.get("artist_name") or "Inconnu"
+        )
+        track_count[key] = track_count.get(key, 0) + 1
+    top_tracks = sorted(track_count.items(), key=lambda x: x[1], reverse=True)[:5]
+
+    total_ms = sum((t.get("duration_ms") or 0) for t in tracks)
+    total_minutes = round(total_ms / 60000)
+
+    return {
+        "release_at": release_paris.isoformat(),
+        "next_release_at": next_release_paris.isoformat(),
+        "window_start_utc": start_utc.isoformat(),
+        "window_end_utc": end_utc.isoformat(),
+        "total_minutes": total_minutes,
+        "total_plays": len(tracks),
+        "top_artists": [{"name": name, "count": count} for name, count in top_artists],
+        "top_tracks": [{"name": name, "artist": artist, "count": count} for (name, artist), count in top_tracks]
+    }
+
+@router.get("/listening-minutes")
+def get_listening_minutes(time_range: str = Query("short_term")):
+    now_utc = datetime.now(timezone.utc)
+
+    if time_range == "short_term":
+        start_utc = now_utc - timedelta(days=28)
+    elif time_range == "medium_term":
+        start_utc = now_utc - timedelta(days=183)
+    elif time_range == "long_term":
+        start_utc = None
+    else:
+        return {"error": 400, "detail": "time_range invalide"}
+
+    query = supabase.table("listening_history").select("duration_ms")
+    if start_utc is not None:
+        query = query.gte("played_at", start_utc.isoformat().replace("+00:00", "Z"))
+
+    data = query.execute()
+    rows = data.data or []
+
+    total_ms = sum((row.get("duration_ms") or 0) for row in rows)
+    total_minutes = round(total_ms / 60000)
+
+    return {
+        "time_range": time_range,
+        "total_minutes": total_minutes,
+        "total_ms": total_ms,
+        "plays_count": len(rows)
     }

@@ -511,7 +511,7 @@ a {
 
 /* ─── KPI 4 colonnes ─── */
 .kpi-row {
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
 }
 
 /* ─── HEADER LOGO PLATEFORME ─── */
@@ -562,7 +562,7 @@ a {
 
 /* ─── KPI 4 colonnes ─── */
 .kpi-row {
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
 }
 
 @media (max-width: 680px) {
