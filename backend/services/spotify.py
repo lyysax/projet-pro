@@ -122,6 +122,7 @@ def get_top_tracks():
 
     return response.json()
 
+## Endpoint pour récupérer l'historique d'écoute récent
 
 @router.get("/recently-played")
 def get_recently_played():
@@ -135,3 +136,59 @@ def get_recently_played():
         return {"error": response.status_code, "detail": response.text}
 
     return response.json()
+
+# Endpoint pour sauvegarder l'historique d'écoute dans Supabase
+@router.post("/save-history")
+def save_listening_history():
+    data = supabase.table("spotify_token").select("access_token").eq("id", "user_1").single().execute()
+    access_token = data.data["access_token"]
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = requests.get(f"{SPOTIFY_API_URL}/me/player/recently-played", headers=headers, params={"limit": 50})
+    
+    if response.status_code != 200:
+        return {"error": response.status_code, "detail": response.text}
+    
+    tracks = response.json()["items"]
+    
+    for track in tracks:
+        supabase.table("listening_history").upsert({
+            "track_id": track["track"]["id"],
+            "track_name": track["track"]["name"],
+            "artist_name": track["track"]["artists"][0]["name"],
+            "duration_ms": track["track"]["duration_ms"],
+            "played_at": track["played_at"]
+        }).execute()
+    
+    return {"saved": len(tracks)}
+
+from datetime import datetime, timezone
+
+@router.get("/daily-recap")
+def daily_recap():
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    data = supabase.table("listening_history").select("*").gte("played_at", f"{today}T00:00:00Z").execute()
+    
+    tracks = data.data
+    
+    if not tracks:
+        return {"message": "Aucune écoute aujourd'hui"}
+    
+    total_ms = sum(t["duration_ms"] for t in tracks)
+    total_minutes = round(total_ms / 60000)
+    
+    artist_count = {}
+    for t in tracks:
+        artist = t["artist_name"]
+        artist_count[artist] = artist_count.get(artist, 0) + 1
+    
+    top_artist = max(artist_count, key=artist_count.get)
+    
+    return {
+        "date": today,
+        "total_tracks": len(tracks),
+        "total_minutes": total_minutes,
+        "top_artist": top_artist,
+        "tracks": tracks
+    }
