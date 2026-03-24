@@ -7,55 +7,58 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-
     <div class="page">
-
       <header class="header">
-        <span class="logo">MuseStat</span>
+        <div class="header-left">
+          <span class="logo">DNAlity</span>
+          <div class="equalizer">
+            <span class="eq-bar"></span>
+            <span class="eq-bar"></span>
+            <span class="eq-bar"></span>
+            <span class="eq-bar"></span>
+            <span class="eq-bar"></span>
+          </div>
+        </div>
       </header>
 
       <main class="main">
-
         <!-- choix de la plateforme -->
         <div id="step-platform">
-
-          <h1 class="title">Tes statistiques musicales,<br>en temps réel.</h1>
-          <p class="subtitle">Connecte-toi à ta plateforme de streaming pour commencer.</p>
+          <h1 class="title">Tes statistiques musicales,<br />en temps réel.</h1>
+          <p class="subtitle">
+            Connecte-toi à ta plateforme de streaming pour commencer.
+          </p>
 
           <div class="connect-box">
-
             <p class="connect-box-title">Choisir une plateforme</p>
 
             <button class="btn-platform" onclick="connectSpotify()">
-              <img src="image/spotify-logo-png-7081.png" alt="Spotify" class="platform-logo" />
+              <img
+                src="image/spotify-logo-png-7081.png"
+                alt="Spotify"
+                class="platform-logo"
+              />
               <span class="platform-label">Continuer avec Spotify</span>
             </button>
-
           </div>
-
         </div>
-
-
-
       </main>
 
       <footer class="footer">
-        <span>© 2025 MuseStat</span>
+        <span>© 2026 DNAlity</span>
       </footer>
-
     </div>
 
     <script>
       async function connectSpotify() {
         try {
-          const response = await fetch('http://127.0.0.1:8000/spotify/auth');
+          const response = await fetch("http://127.0.0.1:8000/spotify/auth");
           const data = await response.json();
           window.location.href = data.auth_url;
         } catch (e) {
-          alert('Le serveur n\'est pas disponible. Lance le backend d\'abord.');
+          alert("Le serveur n'est pas disponible. Lance le backend d'abord.");
         }
       }
     </script>
-
   </body>
 </html>
