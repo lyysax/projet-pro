@@ -93,14 +93,6 @@
             </ul>
           </section>
 
-          <!-- Genres favoris (caché sur la vue Aujourd'hui) -->
-          <section class="card card--full" id="section-genres">
-            <h2 class="card-title">Genres favoris</h2>
-            <ul class="list" id="genre-list">
-              <li class="list-item list-placeholder">Chargement...</li>
-            </ul>
-          </section>
-
           <!-- Titres récents (uniquement sur la vue Aujourd'hui) -->
           <section class="card card--full" id="section-recent">
             <h2 class="card-title">Titres écoutés aujourd'hui</h2>
@@ -145,9 +137,8 @@
 
       async function loadToday() {
         showSection("section-tracks", false);
-        showSection("section-genres", false);
         showSection("section-recent", true);
-        showSection("kpi-last-card", false); // pas utile pour ce mode
+        showSection("kpi-last-card", false); 
         document.getElementById("greeting-sub").textContent =
           "Tes stats du jour (snapshot 21h)";
 
@@ -156,7 +147,6 @@
             (r) => r.json(),
           );
 
-          // Si ton backend renvoie un message d'absence de data
           if (
             !stats ||
             (stats.error && !stats.top_artists && !stats.top_tracks)
@@ -228,7 +218,6 @@
       // ── Vue périodes (4 semaines / 6 mois / tout le temps) ──
       async function loadPeriod(time_range) {
         showSection('section-tracks', true);
-        showSection('section-genres', true);
         showSection('section-recent', false);
         showSection('kpi-last-card', false);
         document.getElementById('waiting-message').classList.add('hidden');
@@ -243,7 +232,7 @@
           `Tes écoutes — ${labels[time_range]}`;
 
         // Reset
-        ["artist-list", "track-list", "genre-list"].forEach((id) => {
+        ["artist-list", "track-list"].forEach((id) => {
           document.getElementById(id).innerHTML =
             '<li class="list-item list-placeholder">Chargement...</li>';
         });
@@ -262,9 +251,8 @@
           const trackItems = tracks.items || [];
 
   const totalMinutes = Number(minutesData.total_minutes || 0);
-  document.getElementById('kpi-minutes').textContent = totalMinutes;
-  document.getElementById('kpi-hours').textContent =
-    `soit ${Math.floor(totalMinutes / 60)}h${String(totalMinutes % 60).padStart(2, '0')}min`;
+  document.getElementById('kpi-minutes').textContent = '—';
+  document.getElementById('kpi-hours').textContent = 'Non disponible';
 
           // Top artistes
           document.getElementById("artist-list").innerHTML = artistItems.length
@@ -282,7 +270,6 @@
             <span class="list-rank">${i + 1}</span>
             <span class="list-name">${artistName}</span>
             <span class="list-detail">${artistGenres || "—"}</span>
-            <span class="list-badge">Popularité ${artistPopularity}/100</span>
           </li>
         `;
                 })
@@ -310,34 +297,9 @@
                 .join("")
             : '<li class="list-item list-placeholder">Aucune donnée</li>';
 
-          // Genres
-          const genres = {};
-          artistItems.forEach((a) => {
-            (Array.isArray(a?.genres) ? a.genres : []).forEach((g) => {
-              genres[g] = (genres[g] || 0) + 1;
-            });
-          });
-          const sortedGenres = Object.entries(genres).sort(
-            (a, b) => b[1] - a[1],
-          );
-
-          document.getElementById("genre-list").innerHTML = sortedGenres.length
-            ? sortedGenres
-                .slice(0, 8)
-                .map(
-                  (g, i) => `
-        <li class="list-item">
-          <span class="list-rank">${i + 1}</span>
-          <span class="list-name">${g[0]}</span>
-          <span class="list-badge">${g[1]} artiste${g[1] > 1 ? "s" : ""}</span>
-        </li>
-      `,
-                )
-                .join("")
-            : '<li class="list-item list-placeholder">Aucune donnée</li>';
         } catch (e) {
           console.error("Erreur chargement période :", e);
-          ["artist-list", "track-list", "genre-list"].forEach((id) => {
+          ["artist-list", "track-list"].forEach((id) => {
             document.getElementById(id).innerHTML =
               '<li class="list-item list-placeholder">Erreur de chargement</li>';
           });
