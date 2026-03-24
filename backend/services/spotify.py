@@ -4,6 +4,7 @@ import requests
 import time
 from urllib.parse import urlencode
 from fastapi import APIRouter, Request, Query
+from fastapi.responses import RedirectResponse
 from supabase import create_client, Client
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -25,6 +26,7 @@ SPOTIFY_API_URL = "https://api.spotify.com/v1"
 
 PARIS_TZ = ZoneInfo("Europe/Paris")
 
+
 @router.get("/auth")
 def spotify_auth():
     params = {
@@ -36,8 +38,6 @@ def spotify_auth():
     url = f"{SPOTIFY_AUTH_URL}?{urlencode(params)}"
     return {"auth_url": url}
 
-
-from fastapi.responses import RedirectResponse
 
 @router.get("/callback")
 def spotify_callback(code: str):
@@ -185,38 +185,48 @@ def get_recently_played():
 # Endpoint pour sauvegarder l'historique d'écoute dans Supabase
 @router.post("/save-history")
 def save_listening_history():
-    data = supabase.table("spotify_token").select("access_token").eq("id", "user_1").single().execute()
-    access_token = data.data["access_token"]
+    token_data = (
+        supabase.table("spotify_token")
+        .select("access_token")
+        .eq("id", "user_1")
+        .single()
+        .execute()
+    )
+    access_token = token_data.data["access_token"]
 
     headers = {"Authorization": f"Bearer {access_token}"}
     response = requests.get(
         f"{SPOTIFY_API_URL}/me/player/recently-played",
         headers=headers,
-        params={"limit": 50}
+        params={"limit": 50},
     )
 
     if response.status_code != 200:
         return {"error": response.status_code, "detail": response.text}
 
-    tracks = response.json().get("items", [])
+    items = response.json().get("items", [])
     rows = []
 
-    for item in tracks:
+    for item in items:
         track = item.get("track", {})
+        track_id = track.get("id")
+        played_at = item.get("played_at")
+
+        if not track_id or not played_at:
+            continue
+
         rows.append({
-            "track_id": track.get("id"),
+            "track_id": track_id,
             "track_name": track.get("name"),
             "artist_name": (track.get("artists") or [{}])[0].get("name"),
             "duration_ms": track.get("duration_ms") or 0,
-            "played_at": item.get("played_at")
+            "played_at": played_at,
         })
-
-    rows = [r for r in rows if r["track_id"] and r["played_at"]]
 
     if rows:
         supabase.table("listening_history").upsert(
             rows,
-            on_conflict="track_id,played_at"
+            on_conflict="track_id,played_at",
         ).execute()
 
     return {"saved": len(rows)}
@@ -345,3 +355,57 @@ def get_listening_minutes(time_range: str = Query("short_term")):
         "total_ms": total_ms,
         "plays_count": len(rows)
     }
+
+
+@router.get("/history-diagnostics")
+def history_diagnostics():
+    now_utc = datetime.now(timezone.utc)
+    short_start = now_utc - timedelta(days=28)
+    medium_start = now_utc - timedelta(days=183)
+
+    all_rows = (
+        supabase.table("listening_history")
+        .select("played_at")
+        .order("played_at", desc=False)
+        .execute()
+        .data
+        or []
+    )
+
+    if not all_rows:
+        return {
+            "total_rows": 0,
+            "oldest_played_at": None,
+            "latest_played_at": None,
+            "short_term_rows": 0,
+            "medium_term_rows": 0,
+            "long_term_rows": 0,
+        }
+
+    played_ats = [row.get("played_at") for row in all_rows if row.get("played_at")]
+
+    def _count_since(start_iso: str) -> int:
+        rows = (
+            supabase.table("listening_history")
+            .select("played_at")
+            .gte("played_at", start_iso)
+            .execute()
+            .data
+            or []
+        )
+        return len(rows)
+
+    short_rows = _count_since(short_start.isoformat().replace("+00:00", "Z"))
+    medium_rows = _count_since(medium_start.isoformat().replace("+00:00", "Z"))
+
+    return {
+        "total_rows": len(played_ats),
+        "oldest_played_at": played_ats[0],
+        "latest_played_at": played_ats[-1],
+        "short_term_start_utc": short_start.isoformat(),
+        "medium_term_start_utc": medium_start.isoformat(),
+        "short_term_rows": short_rows,
+        "medium_term_rows": medium_rows,
+        "long_term_rows": len(played_ats),
+    }
+

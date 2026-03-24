@@ -193,6 +193,8 @@
         showSection('kpi-last-card', false);
         document.getElementById('waiting-message').classList.add('hidden');
         document.getElementById('dashboard-content').classList.remove('hidden');
+        
+
 
         const labels = {
           short_term:  '4 dernières semaines',
@@ -213,13 +215,13 @@
   const [artists, tracks, minutesData] = await Promise.all([
     fetch(`${BASE_URL}/spotify/top-artists?time_range=${time_range}`).then(r => r.json()),
     fetch(`${BASE_URL}/spotify/top-tracks?time_range=${time_range}`).then(r => r.json()),
-    fetch(`${BASE_URL}/spotify/listening-minutes?time_range=${time_range}`).then(r => r.json()),
   ]);
 
   const artistItems = artists.items || [];
   const trackItems  = tracks.items  || [];
 
-  const totalMinutes = Number(minutesData.total_minutes || 0);
+  const totalMs = trackItems.reduce((sum, t) => sum + (t?.duration_ms || 0), 0);
+  const totalMinutes = Math.round(totalMs / 60000);
   document.getElementById('kpi-minutes').textContent = totalMinutes;
   document.getElementById('kpi-hours').textContent =
     `soit ${Math.floor(totalMinutes / 60)}h${String(totalMinutes % 60).padStart(2, '0')}min`;
@@ -307,7 +309,12 @@
       // ── Init ─────────────────────────────────────────────
       loadProfile();
       loadToday();
-    </script>
 
+    </script>
+  <div class="kpi-card" id="kpi-artists-card">
+  <p class="kpi-label">Artistes différents</p>
+  <p class="kpi-value" id="kpi-artists">—</p>
+  <p class="kpi-sub" id="kpi-artists-sub"></p>
+</div>
   </body>
 </html>
