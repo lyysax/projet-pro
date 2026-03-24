@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 load_dotenv()
 
-from backend.services import spotify, deezer
+from backend.services import spotify
 
 app = FastAPI()
 
@@ -16,7 +16,6 @@ app.add_middleware(
 )
 
 app.include_router(spotify.router, prefix="/spotify")
-app.include_router(deezer.router, prefix="/deezer")
 
 @app.get("/")
 def root():
@@ -25,3 +24,4 @@ def root():
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+

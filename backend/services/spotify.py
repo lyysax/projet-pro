@@ -3,7 +3,7 @@ import base64
 import requests
 import time
 from urllib.parse import urlencode
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Query
 from supabase import create_client, Client
 
 router = APIRouter()
@@ -33,6 +33,8 @@ def spotify_auth():
     return {"auth_url": url}
 
 
+from fastapi.responses import RedirectResponse
+
 @router.get("/callback")
 def spotify_callback(code: str):
     auth_header = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
@@ -50,8 +52,8 @@ def spotify_callback(code: str):
 
     response = requests.post(SPOTIFY_TOKEN_URL, data=data, headers=headers)
     token_data = response.json()
+    print("TOKEN DATA:", token_data)
 
-    # Sauvegarde dans Supabase
     expires_at = int(time.time()) + token_data["expires_in"]
 
     supabase.table("spotify_token").upsert({
@@ -61,7 +63,7 @@ def spotify_callback(code: str):
         "expires_at": expires_at
     }).execute()
 
-    return token_data
+    return RedirectResponse(url="http://127.0.0.1:5500/frontend/dashboard.html")
 
 # Auto refresh token endpoint (to be called by frontend before making Spotify API calls)
 
@@ -93,34 +95,67 @@ def refresh_spotify_token():
 
     return new_token
 
+@router.get("/me")
+def get_me():
+    # Récupère le token stocké
+    data = supabase.table("spotify_token").select("access_token").eq("id", "user_1").single().execute()
+    token_row = data.data if data else None
+
+    if not token_row or "access_token" not in token_row:
+        return {"error": 401, "detail": "Token Spotify introuvable. Reconnecte ton compte."}
+
+    access_token = token_row["access_token"]
+
+    # Appel Spotify /me
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = requests.get(f"{SPOTIFY_API_URL}/me", headers=headers)
+
+    if response.status_code != 200:
+        return {"error": response.status_code, "detail": response.text}
+
+    me = response.json()
+    return {
+        "id": me.get("id"),
+        "name": me.get("display_name") or me.get("id") or "utilisateur",
+        "email": me.get("email")
+    }
+
 # Endpoints pour récupérer les données Spotify
 
 @router.get("/top-artists")
-def get_top_artists():
+def get_top_artists(time_range: str = Query("short_term")):
     data = supabase.table("spotify_token").select("access_token").eq("id", "user_1").single().execute()
     access_token = data.data["access_token"]
 
     headers = {"Authorization": f"Bearer {access_token}"}
-    response = requests.get(f"{SPOTIFY_API_URL}/me/top/artists", headers=headers, params={"time_range": "short_term", "limit": 10})
-    
+    response = requests.get(
+        f"{SPOTIFY_API_URL}/me/top/artists",
+        headers=headers,
+        params={"time_range": time_range, "limit": 10}
+    )
+
     if response.status_code != 200:
         return {"error": response.status_code, "detail": response.text}
-    
+
     return response.json()
 
 
 @router.get("/top-tracks")
-def get_top_tracks():
+def get_top_tracks(time_range: str = Query("short_term")):
     data = supabase.table("spotify_token").select("access_token").eq("id", "user_1").single().execute()
     access_token = data.data["access_token"]
 
     headers = {"Authorization": f"Bearer {access_token}"}
-    response = requests.get(f"{SPOTIFY_API_URL}/me/top/tracks", headers=headers, params={"time_range": "short_term", "limit": 10})
-    
+    response = requests.get(
+        f"{SPOTIFY_API_URL}/me/top/tracks",
+        headers=headers,
+        params={"time_range": time_range, "limit": 10}
+    )
+
     if response.status_code != 200:
         return {"error": response.status_code, "detail": response.text}
 
-    return response.json()
+    return response.json() 
 
 ## Endpoint pour récupérer l'historique d'écoute récent
 
@@ -162,7 +197,7 @@ def save_listening_history():
     
     return {"saved": len(tracks)}
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 @router.get("/daily-recap")
 def daily_recap():
@@ -191,4 +226,5 @@ def daily_recap():
         "total_minutes": total_minutes,
         "top_artist": top_artist,
         "tracks": tracks
+
     }
