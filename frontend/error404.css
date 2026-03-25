@@ -9,7 +9,7 @@
 :root {
   --cyan: #00e5c8;
   --black: #111111;
-  --bg: #fafaf8;
+  --bg: #20252a;
   --border: #111111;
   --line-width: 1.5px;
 }
@@ -127,13 +127,13 @@ body {
   font-size: clamp(14px, 2.5vw, 20px);
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: var(--black);
+  color: #c2b7b7;
   margin-top: 8px;
 }
 
 .subtitle {
   font-size: clamp(12px, 1.4vw, 14px);
-  color: #444;
+  color: #c2b7b7;
   margin-top: 18px;
   line-height: 1.6;
   max-width: 380px;
@@ -144,7 +144,7 @@ body {
   margin-top: 36px;
   display: inline-block;
   padding: 14px 40px;
-  border: 1.5px solid var(--black);
+  border: 1.5px solid #c2b7b7;
   background: transparent;
   font-family: "Montserrat", sans-serif;
   font-weight: 700;
@@ -152,7 +152,7 @@ body {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   text-decoration: none;
-  color: var(--black);
+  color: #c2b7b7;
   cursor: pointer;
   transition:
     background 0.2s,
