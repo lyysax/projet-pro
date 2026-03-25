@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MuseStat — Dashboard</title>
+    <title>DNAlity — Dashboard</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -138,7 +138,7 @@
       async function loadToday() {
         showSection("section-tracks", false);
         showSection("section-recent", true);
-        showSection("kpi-last-card", false); 
+        showSection("kpi-last-card", false);
         document.getElementById("greeting-sub").textContent =
           "Tes stats du jour (snapshot 21h)";
 
@@ -217,11 +217,11 @@
 
       // ── Vue périodes (4 semaines / 6 mois / tout le temps) ──
       async function loadPeriod(time_range) {
-        showSection('section-tracks', true);
-        showSection('section-recent', false);
-        showSection('kpi-last-card', false);
-        document.getElementById('waiting-message').classList.add('hidden');
-        document.getElementById('dashboard-content').classList.remove('hidden');
+        showSection("section-tracks", true);
+        showSection("section-recent", false);
+        showSection("kpi-last-card", false);
+        document.getElementById("waiting-message").classList.add("hidden");
+        document.getElementById("dashboard-content").classList.remove("hidden");
 
         const labels = {
           short_term: "4 dernières semaines",
@@ -241,18 +241,24 @@
         });
 
         try {
-  const [artists, tracks, minutesData] = await Promise.all([
-    fetch(`${BASE_URL}/spotify/top-artists?time_range=${time_range}`).then(r => r.json()),
-    fetch(`${BASE_URL}/spotify/top-tracks?time_range=${time_range}`).then(r => r.json()),
-    fetch(`${BASE_URL}/spotify/listening-minutes?time_range=${time_range}`).then(r => r.json()),
-  ]);
+          const [artists, tracks, minutesData] = await Promise.all([
+            fetch(
+              `${BASE_URL}/spotify/top-artists?time_range=${time_range}`,
+            ).then((r) => r.json()),
+            fetch(
+              `${BASE_URL}/spotify/top-tracks?time_range=${time_range}`,
+            ).then((r) => r.json()),
+            fetch(
+              `${BASE_URL}/spotify/listening-minutes?time_range=${time_range}`,
+            ).then((r) => r.json()),
+          ]);
 
           const artistItems = artists.items || [];
           const trackItems = tracks.items || [];
 
-  const totalMinutes = Number(minutesData.total_minutes || 0);
-  document.getElementById('kpi-minutes').textContent = '—';
-  document.getElementById('kpi-hours').textContent = 'Non disponible';
+          const totalMinutes = Number(minutesData.total_minutes || 0);
+          document.getElementById("kpi-minutes").textContent = "—";
+          document.getElementById("kpi-hours").textContent = "Non disponible";
 
           // Top artistes
           document.getElementById("artist-list").innerHTML = artistItems.length
@@ -296,7 +302,6 @@
                 })
                 .join("")
             : '<li class="list-item list-placeholder">Aucune donnée</li>';
-
         } catch (e) {
           console.error("Erreur chargement période :", e);
           ["artist-list", "track-list"].forEach((id) => {
@@ -326,8 +331,6 @@
       // ── Init ─────────────────────────────────────────────
       loadProfile();
       loadToday();
-
     </script>
-
   </body>
 </html>
